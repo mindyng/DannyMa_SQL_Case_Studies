@@ -86,8 +86,10 @@ FROM cte
 )
 
 SELECT customer_id
-, product_id
+, product_name
 FROM item_pop_rk
+JOIN dannys_diner.menu
+ON item_pop_rk.product_id = menu.product_id
 WHERE item_rk = 1;
 
 -- 6. Which item was purchased first by the customer after they became a member?
@@ -108,11 +110,38 @@ AND sales.order_date > members.join_date
 )
 
 SELECT customer_id
-, product_id AS first_purchase_after_membership
+, product_name AS first_purchase_after_membership
 FROM cte
+JOIN dannys_diner.menu
+ON cte.product_id = menu.product_id
 WHERE order_date_rk = 1
+ORDER BY 1;
 
 -- 7. Which item was purchased just before the customer became a member?
+
+--get all dates before join date
+--get the one that is last ranked (closest to join date)
+
+WITH latest_purch AS (
+SELECT members.customer_id
+, join_date
+, sales.order_date
+, menu.product_name
+, DENSE_RANK() OVER (PARTITION BY members.customer_id ORDER BY order_date DESC) AS latest_purchase
+FROM dannys_diner.members
+JOIN dannys_diner.sales
+ON members.customer_id = sales.customer_id
+AND members.join_date > sales.order_date
+JOIN dannys_diner.menu
+ON sales.product_id = menu.product_id
+ORDER BY customer_id, order_date
+)
+
+SELECT customer_id
+, product_name
+FROM latest_purch
+WHERE latest_purchase = 1
+
 -- 8. What is the total items and amount spent for each member before they became a member?
 -- 9.  If each $1 spent equates to 10 points and sushi has a 2x points multiplier - how many points would each customer have?
 -- 10. In the first week after a customer joins the program (including their join date) they earn 2x points on all items, not just sushi - how many points do customer A and B have at the end of January?
