@@ -1,6 +1,17 @@
+--Ref: https://www.db-fiddle.com/f/bLv9b15qZV1xzWgsgPJ8eK/1
+
 /* --------------------
    Case Study Questions
    --------------------*/
+   
+-- Example Query:
+-- SELECT
+--   	product_id,
+--     product_name,
+--     price
+-- FROM dannys_diner.menu
+-- ORDER BY price DESC
+-- LIMIT 5;
 
 -- 1. What is the total amount each customer spent at the restaurant?
 
@@ -226,13 +237,41 @@ ON sales.product_id = menu.product_id
 ORDER BY 1
 , 2;
 
+--Rank All The Things
+-- Danny also requires further information about the ranking of customer products, but he purposely does not need the ranking for non-member purchases so he expects null ranking values for the records when customers are not yet part of the loyalty program.
 
+-- customer_id	order_date	product_name	price	member	ranking
+-- A	2021-01-01	curry	15	N	null
+-- A	2021-01-01	sushi	10	N	null
+-- A	2021-01-07	curry	15	Y	1
+-- A	2021-01-10	ramen	12	Y	2
+-- A	2021-01-11	ramen	12	Y	3
+-- A	2021-01-11	ramen	12	Y	3
+-- B	2021-01-01	curry	15	N	null
+-- B	2021-01-02	curry	15	N	null
+-- B	2021-01-04	sushi	10	N	null
+-- B	2021-01-11	sushi	10	Y	1
+-- B	2021-01-16	ramen	12	Y	2
+-- B	2021-02-01	ramen	12	Y	3
+-- C	2021-01-01	ramen	12	N	null
+-- C	2021-01-01	ramen	12	N	null
+-- C	2021-01-07	ramen	12	N	null
 
--- Example Query:
--- SELECT
---   	product_id,
---     product_name,
---     price
--- FROM dannys_diner.menu
--- ORDER BY price DESC
--- LIMIT 5;
+WITH members AS (SELECT sales.customer_id
+, order_date
+, product_name
+, price
+, CASE WHEN join_date IS NOT NULL AND order_date >= join_date THEN 'Y' ELSE 'N' END AS member
+FROM dannys_diner.sales
+LEFT JOIN dannys_diner.members
+ON sales.customer_id = members.customer_id
+LEFT JOIN dannys_diner.menu
+ON sales.product_id = menu.product_id
+ORDER BY 1
+, 2)
+
+SELECT *
+, CASE WHEN member = 'Y' THEN RANK() OVER (PARTITION BY member, customer_id ORDER BY order_date) ELSE NULL END AS ranking
+FROM members
+ORDER BY 1
+, 2;
