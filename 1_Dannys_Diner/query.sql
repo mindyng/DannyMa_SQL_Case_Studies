@@ -1,5 +1,3 @@
--- Ref: https://www.db-fiddle.com/f/bLv9b15qZV1xzWgsgPJ8eK/0
-
 /* --------------------
    Case Study Questions
    --------------------*/
@@ -190,6 +188,45 @@ JOIN dannys_diner.menu
 ON sales.product_id = menu.product_id
 GROUP BY 1
 ORDER BY 1;
+
+--BONUS Q:
+
+-- Join All The Things
+-- The following questions are related creating basic data tables that Danny and his team can use to quickly derive insights without needing to join the underlying tables using SQL.
+
+-- Recreate the following table output using the available data:
+
+-- customer_id	order_date	product_name	price	member
+-- A	2021-01-01	curry	15	N
+-- A	2021-01-01	sushi	10	N
+-- A	2021-01-07	curry	15	Y
+-- A	2021-01-10	ramen	12	Y
+-- A	2021-01-11	ramen	12	Y
+-- A	2021-01-11	ramen	12	Y
+-- B	2021-01-01	curry	15	N
+-- B	2021-01-02	curry	15	N
+-- B	2021-01-04	sushi	10	N
+-- B	2021-01-11	sushi	10	Y
+-- B	2021-01-16	ramen	12	Y
+-- B	2021-02-01	ramen	12	Y
+-- C	2021-01-01	ramen	12	N
+-- C	2021-01-01	ramen	12	N
+-- C	2021-01-07	ramen	12	N
+
+SELECT sales.customer_id
+, order_date
+, product_name
+, price
+, CASE WHEN join_date IS NOT NULL AND order_date >= join_date THEN 'Y' ELSE 'N' END AS member
+FROM dannys_diner.sales
+LEFT JOIN dannys_diner.members
+ON sales.customer_id = members.customer_id
+LEFT JOIN dannys_diner.menu
+ON sales.product_id = menu.product_id
+ORDER BY 1
+, 2;
+
+
 
 -- Example Query:
 -- SELECT
