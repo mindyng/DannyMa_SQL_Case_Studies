@@ -1,3 +1,5 @@
+-- Ref: https://www.db-fiddle.com/f/bLv9b15qZV1xzWgsgPJ8eK/0
+
 /* --------------------
    Case Study Questions
    --------------------*/
@@ -140,11 +142,54 @@ ORDER BY customer_id, order_date
 SELECT customer_id
 , product_name
 FROM latest_purch
-WHERE latest_purchase = 1
+WHERE latest_purchase = 1;
 
 -- 8. What is the total items and amount spent for each member before they became a member?
+
+SELECT sales.customer_id
+, COUNT(sales.product_id) AS total_items
+, SUM(price) AS amount_spent
+FROM dannys_diner.sales
+JOIN dannys_diner.members
+ON sales.customer_id = members.customer_id
+AND sales.order_date < members.join_date
+JOIN dannys_diner.menu
+ON sales.product_id = menu.product_id
+GROUP BY 1
+ORDER BY 1;
+
 -- 9.  If each $1 spent equates to 10 points and sushi has a 2x points multiplier - how many points would each customer have?
+
+--get $ spent per item
+--use condiitional to output points with sushi 2(10*price) pts per $1 and rest 10 pts per $1
+
+SELECT sales.customer_id
+, SUM(CASE WHEN product_name = 'sushi' THEN 2*(price*10) ELSE price*10 END) AS points
+FROM dannys_diner.sales
+JOIN dannys_diner.menu
+ON sales.product_id = menu.product_id
+GROUP BY 1
+ORDER BY 2 DESC;
+
 -- 10. In the first week after a customer joins the program (including their join date) they earn 2x points on all items, not just sushi - how many points do customer A and B have at the end of January?
+
+--get sales that happen only in January
+--allocate points based on purchased item since membership 
+	--join date + 6 days: 2*(price * 10)
+    --outside of this first week, regular points: non-sushi = price * 10; sushi = 2*(price * 10)
+
+SELECT members.customer_id
+, SUM(CASE WHEN order_date <= join_date + INTERVAL '6 day' THEN 2*(price*10) 
+WHEN order_date > join_date + INTERVAL '6 day' AND sales.product_id = 1 THEN 2*(price*10) 
+WHEN order_date > join_date + INTERVAL '6 day' AND sales.product_id != 1 THEN price*10
+END) AS points
+FROM (SELECT * FROM dannys_diner.sales WHERE order_date BETWEEN '2021-01-01' AND '2021-01-31') AS sales
+JOIN dannys_diner.members
+ON sales.customer_id = members.customer_id
+JOIN dannys_diner.menu
+ON sales.product_id = menu.product_id
+GROUP BY 1
+ORDER BY 1;
 
 -- Example Query:
 -- SELECT
